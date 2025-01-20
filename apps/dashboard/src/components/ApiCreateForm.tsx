@@ -1,198 +1,138 @@
-import React, { useState } from 'react';
+import { useFormik } from 'formik';
+import { useNavigate } from 'react-router-dom';
+import * as yup from 'yup';
 import {
-  TextField, Checkbox, FormControlLabel, MenuItem, Button, FormGroup,
-  Select, InputLabel, FormControl, Box, Typography, Grid, Card, CardContent
+  Box,
+  Typography,
+  TextField,
+  Button,
+  FormControl,
+  NativeSelect,
 } from '@mui/material';
+import { isAuthenticated } from '../utils/auth';
 
-const ApiForm: React.FC = () => {
-  const [url, setUrl] = useState('');
-  const [notifyByEmail, setNotifyByEmail] = useState(true);
-  const [notifyBySMS, setNotifyBySMS] = useState(false);
-  const [notifyByCall, setNotifyByCall] = useState(false);
-  const [notifyByPush, setNotifyByPush] = useState(false);
-  const [checkFrequency, setCheckFrequency] = useState('5min');
-  const [requestTimeout, setRequestTimeout] = useState('30');
-  const [httpMethod, setHttpMethod] = useState('GET');
+const validationSchema = yup.object({
+  name: yup.string().required('Name is required'),
+  description: yup.string().max(400, 'Description is too long'),
+  apiUrl: yup.string().url('Enter a valid URL').required('API URL is required'),
+  interval: yup.number().required('Interval is required').positive('Interval must be a positive number').integer('Interval must be a whole number'),
+});
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = {
-      url,
-      notifyByEmail,
-      notifyBySMS,
-      notifyByCall,
-      notifyByPush,
-      checkFrequency,
-      requestTimeout,
-      httpMethod
-    };
-    console.log(formData);
-  };
+const ApiCreateForm = () => {
+  const Backend_url=import.meta.env.VITE_BACKEND_URL;
+  const Navigator=useNavigate();
+  const formik = useFormik({
+    initialValues: {
+      name: '',
+      description: '',
+      apiUrl: '',
+      interval: 30,
+    },
+    validationSchema: validationSchema,
+    onSubmit: async (values) => {
+      console.log(values);
+      if(isAuthenticated()){
+        const response = await fetch(`${Backend_url}/api`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          },
+          body: JSON.stringify({
+            url: values.apiUrl,
+            name: values.name,
+            description: values.description || null,
+            checkInterval: values.interval,
+          }),
+        });
+        if (response.ok) {
+          alert('Monitor created successfully');
+        } else {
+          alert('Failed to create monitor');
+        }
+      }else{
+        Navigator('/login');
+      }
+    },
+  });
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
+    <Box component="form" onSubmit={formik.handleSubmit} sx={{ p: 3, maxWidth: 600, mx: 'auto' }}>
+      <Typography variant="h4" gutterBottom>
+        Create Monitor
+      </Typography>
 
-      <Box
-        sx={{
-          bgcolor: 'background.paper',
-          boxShadow: 1,
-          borderRadius: 2,
-          p: 2,
-          marginBottom:2,
-          minWidth: 300,
-        }}
-      >
-        <Box sx={{ color: 'text.secondary' }}>Active Monitoring</Box>
-        <Box sx={{
-          color: 'text.primary', fontSize: 34, fontWeight: 'medium', ":hover": {
-            scale: "1.5", transition: "0.4s"
-          }
-        }}>
-          2/3
-        </Box>
-      </Box>
-      <Grid container spacing={2}>
-        {/* Part 1 - API URL */}
+      {/* Name */}
+      <TextField
+        label="Name"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        name="name"
+        value={formik.values.name}
+        onChange={formik.handleChange}
+        onBlur={formik.handleBlur}
+        helperText={formik.touched.name && formik.errors.name ? formik.errors.name : 'Enter a name for the monitor.'}
+        error={formik.touched.name && Boolean(formik.errors.name)}
+      />
 
-        <Grid item xs={12} md={6}>
-          <Typography variant="subtitle1" gutterBottom>
-            API URL
-          </Typography>
-          <Typography variant="body2" color="textSecondary" gutterBottom>
-            Enter the API endpoint you wish to monitor. Ensure the URL is accurate and publicly accessible.
-          </Typography>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Card sx={{
-            mb: 2, boxShadow: 1,
-            borderRadius: 5,
-          }}>
-            <CardContent>
-              <TextField
-                label="API URL"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                fullWidth
-                required
-                margin="normal"
-                InputProps={{
-                  startAdornment: <Typography>https://</Typography>,
-                }}
-              />
-            </CardContent>
-          </Card>
-        </Grid>
+      {/* Description */}
+      <TextField
+        label="Description"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        name="description"
+        value={formik.values.description}
+        onChange={formik.handleChange}
+        onBlur={formik.handleBlur}
+        helperText={formik.touched.description && formik.errors.description ? formik.errors.description : 'Enter a short description for the monitor.'}
+        error={formik.touched.description && Boolean(formik.errors.description)}
+        multiline
+        rows={3}
+      />
 
-        {/* Part 2 - Notification Preferences */}
-        <Grid item xs={12} md={6}>
-          <Typography variant="subtitle1" gutterBottom>
-            Notification Preferences
-          </Typography>
-          <Typography variant="body2" color="textSecondary" gutterBottom>
-            Choose how you'd like to be notified in case of downtime or errors. You can opt for email, SMS, call, or push notifications.
-          </Typography>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Card sx={{
-            mb: 2, boxShadow: 1,
-            borderRadius: 5,
-          }}>
-            <CardContent>
-              <Typography variant="subtitle1">
-                Notification by
-              </Typography>
-              <FormGroup>
-                <FormControlLabel
-                  control={<Checkbox checked={notifyByEmail} onChange={(e) => setNotifyByEmail(e.target.checked)} />}
-                  label="Email"
-                />
-                <FormControlLabel
-                  control={<Checkbox checked={notifyBySMS} onChange={(e) => setNotifyBySMS(e.target.checked)} />}
-                  label="SMS"
-                />
-                <FormControlLabel
-                  control={<Checkbox checked={notifyByCall} onChange={(e) => setNotifyByCall(e.target.checked)} />}
-                  label="Call"
-                />
-                <FormControlLabel
-                  control={<Checkbox checked={notifyByPush} onChange={(e) => setNotifyByPush(e.target.checked)} />}
-                  label="Push Notification"
-                />
-              </FormGroup>
-            </CardContent>
-          </Card>
-        </Grid>
+      {/* API URL */}
+      <TextField
+        label="API URL"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        name="apiUrl"
+        value={formik.values.apiUrl}
+        onChange={formik.handleChange}
+        onBlur={formik.handleBlur}
+        helperText={formik.touched.apiUrl && formik.errors.apiUrl ? formik.errors.apiUrl : 'Enter the URL of the API you want to monitor.'}
+        error={formik.touched.apiUrl && Boolean(formik.errors.apiUrl)}
+      />
 
-        {/* Part 3 - Monitoring Settings */}
-        <Grid item xs={12} md={6}>
-          <Typography variant="subtitle1" gutterBottom>
-            Monitoring Settings
-          </Typography>
-          <Typography variant="body2" color="textSecondary" gutterBottom>
-            Define how often the API should be checked and set the timeout for the requests. You can also select the HTTP method.
-          </Typography>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Card sx={{
-            mb: 2, boxShadow: 1,
-            borderRadius: 5,
-          }}>
-            <CardContent>
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Check Frequency</InputLabel>
-                <Select
-                  value={checkFrequency}
-                  onChange={(e) => setCheckFrequency(e.target.value as string)}
-                  required
-                  label="Check Frequency"
-                >
-                  <MenuItem value="3min">3 Minutes</MenuItem>
-                  <MenuItem value="5min">5 Minutes</MenuItem>
-                  <MenuItem value="10min">10 Minutes</MenuItem>
-                  <MenuItem value="15min">15 Minutes</MenuItem>
-                  <MenuItem value="30min">30 Minutes</MenuItem>
-                </Select>
-              </FormControl>
+      {/* Interval */}
+      <FormControl fullWidth margin="normal">
+        <NativeSelect
+          name="interval"
+          value={formik.values.interval}
+          onChange={(event) => formik.setFieldValue('interval', Number(event.target.value))}
+          onBlur={formik.handleBlur}
+          error={formik.touched.interval && Boolean(formik.errors.interval)}
+        >
+          <option value={30}>30 seconds</option>
+          <option value={60}>1 minute</option>
+          <option value={120}>2 minutes</option>
+          <option value={180}>3 minutes</option>
+          <option value={5*60}>5 minutes</option>
+          <option value={10*60}>10 minutes</option>
+        </NativeSelect>
+        <Typography variant="caption" color="error">
+          {formik.touched.interval && formik.errors.interval}
+        </Typography>
+      </FormControl>
 
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Request Timeout</InputLabel>
-                <Select
-                  value={requestTimeout}
-                  onChange={(e) => setRequestTimeout(e.target.value as string)}
-                  label="Request Timeout"
-                >
-                  <MenuItem value="15">15 Seconds</MenuItem>
-                  <MenuItem value="20">20 Seconds</MenuItem>
-                  <MenuItem value="30">30 Seconds</MenuItem>
-                  <MenuItem value="45">45 Seconds</MenuItem>
-                  <MenuItem value="60">1 Minute</MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth margin="normal">
-                <InputLabel>HTTP Method</InputLabel>
-                <Select
-                  value={httpMethod}
-                  onChange={(e) => setHttpMethod(e.target.value as string)}
-                  label="HTTP Method"
-                >
-                  <MenuItem value="GET">GET</MenuItem>
-                  <MenuItem value="POST">POST</MenuItem>
-                  <MenuItem value="PUT">PUT</MenuItem>
-                  <MenuItem value="PATCH">PATCH</MenuItem>
-                  <MenuItem value="HEAD">HEAD</MenuItem>
-                </Select>
-              </FormControl>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      <Button variant="contained" color="primary" type="submit" sx={{ mt: 2 }}>
-        Start Monitoring
+      {/* Submit Button */}
+      <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+        Create Monitor
       </Button>
     </Box>
   );
 };
 
-export default ApiForm;
+export default ApiCreateForm;

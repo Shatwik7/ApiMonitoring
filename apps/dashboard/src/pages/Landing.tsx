@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Vortex } from "../components/Vortex";
+import { useNavigate} from 'react-router-dom';
 
 export function Landing() {
   const words = ['Spot', 'Resolve', 'Prevent'];
   const [currentWord, setCurrentWord] = useState(0);
+  const navigate=useNavigate();
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentWord((prev) => (prev + 1) % words.length);
@@ -45,7 +47,12 @@ export function Landing() {
             Sentinel helps you monitor, spot, and prevent API downtimes with
             real-time insights, alerts, and comprehensive analytics.
           </p>
-          <button className="mt-8 bg-indigo-500 hover:bg-indigo-600 text-white py-3 px-8 rounded-lg font-semibold shadow-lg">
+          {(!localStorage.getItem('token'))?(
+            <button onClick={()=>navigate('/dash')} className="mt-8 bg-indigo-500 hover:bg-indigo-600 text-white py-3 px-8 rounded-lg font-semibold shadow-lg">
+              Go to Dashboard
+            </button>):null
+          }
+          <button onClick={()=>navigate('/signin')} className="mt-8 bg-indigo-500 hover:bg-indigo-600 text-white py-3 px-8 rounded-lg font-semibold shadow-lg">
             Sign Up Now
           </button>
         </section>

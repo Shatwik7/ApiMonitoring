@@ -6,6 +6,26 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+enum ApiError {
+  DNS
+  STATUS
+  TIMEOUT
+}
+enum HttpMethod {
+  GET
+  POST
+  DELETE
+  PUT
+  UPDATE
+  PATCH
+}
+
+enum Region {
+  europe
+  americas
+  asia
+  oceania
+}
 
 model User {
   id        Int      @id @default(autoincrement())
@@ -14,58 +34,59 @@ model User {
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  
   // Relations
   apis          API[] // A user can have many APIs
-  alerts        Alert[] // A user can receive many alerts
   notifications Notification[] // A user can have many notifications
   settings      Settings? // A user has one set of settings
+
+  @@index([email]) // Add index here
 }
 
 model API {
-  id            Int      @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   url           String   
   name          String?
   description   String?
-  checkInterval Int // In minutes (e.g., 3 minutes)
+  checkInterval Int // In seconds (e.g., 3)
+  lastCheck     DateTime @default(now())
+  nextCheck     DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  method        HttpMethod   @default(GET) // Enum for HTTP methods
+  live         Boolean @default(true)
+  lastLive      DateTime @default(now())
+
 
   // Relations
   userId    Int
   user      User       @relation(fields: [userId], references: [id])
   apiChecks APICheck[] // Each API has multiple checks
   incidents Incident[] // Each API can have multiple incidents
-  alerts    Alert[] // Alerts triggered for this API
+
+  @@index([nextCheck]) // Add index here
+  @@index([id]) // Add index here
+  @@index([userId]) // Add index here
 }
 
 model APICheck {
   id                Int      @id @default(autoincrement())
   apiId             Int
-  apiUrl            String
   dnsLookupTime     Float
   tcpConnectionTime Float
   tlsHandshakeTime  Float
   statusCode        Int
   totalTime         Float
+  region            Region
+  live              Boolean @default(false)  
   checkedAt         DateTime @default(now())
 
   // Relations
   api API @relation(fields: [apiId], references: [id])
+  @@index([apiId]) // Add index here
 }
 
-model Alert {
-  id        Int      @id @default(autoincrement())
-  apiId     Int
-  userId    Int
-  message   String
-  createdAt DateTime @default(now())
-  seen      Boolean  @default(false)
 
-  // Relations
-  api  API  @relation(fields: [apiId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-}
 
 model Notification {
   id        Int      @id @default(autoincrement())
@@ -83,6 +104,7 @@ model Settings {
   userId             Int     @unique
   notifyByEmail      Boolean @default(true)
   notifyBySMS        Boolean @default(false)
+  notifyByCall       Boolean @default(false)
   alertThresholdTime Int // Time in ms above which an alert is triggered
 
   // Relations
@@ -93,10 +115,14 @@ model Incident {
   id          Int       @id @default(autoincrement())
   apiId       Int
   description String
-  severity    String // e.g., 'Critical', 'High', 'Medium', 'Low'
   createdAt   DateTime  @default(now())
   resolvedAt  DateTime?
+  acknowledged Boolean @default(false)
+  resolved     Boolean @default(false)
+  screenshot   String?
+  type        ApiError
 
   // Relations
   api API @relation(fields: [apiId], references: [id])
+  @@index([apiId]) // Add index here
 }

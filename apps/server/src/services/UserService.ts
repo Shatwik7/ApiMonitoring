@@ -3,9 +3,9 @@ import { UserCreateData } from '../models/UserCreateData';
 
 const prisma = new PrismaClient();
 
-class UserService {
+
   // Create a new user
-  async createUser(userData: UserCreateData): Promise<User> {
+  async function createUser(userData: UserCreateData): Promise<User> {
     try {
       const newUser = await prisma.user.create({
         data: userData,
@@ -18,13 +18,13 @@ class UserService {
   }
 
   // Get user by ID
-  async getUserById(userId: number): Promise<User | null> {
+  async function getUserById(userId: number): Promise<User | null> {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
         include: {
           apis: true,
-          alerts: true,
+          // alerts: true,
           notifications: true,
           settings: true,
         },
@@ -37,7 +37,7 @@ class UserService {
   }
 
   // Get user by email
-  async getUserByEmail(email: string): Promise<User | null> {
+  async function getUserByEmail(email: string): Promise<User | null> {
     try {
       const user = await prisma.user.findUnique({
         where: { email: email },
@@ -50,7 +50,7 @@ class UserService {
   }
 
   // Update user by ID
-  async updateUser(userId: number, updateData: Partial<UserCreateData>): Promise<User> {
+  async function updateUser(userId: number, updateData: Partial<UserCreateData>): Promise<User> {
     try {
       const updatedUser = await prisma.user.update({
         where: { id: userId },
@@ -64,7 +64,7 @@ class UserService {
   }
 
   // Delete user by ID
-  async deleteUser(userId: number): Promise<User> {
+  async function deleteUser(userId: number): Promise<User> {
     try {
       const deletedUser = await prisma.user.delete({
         where: { id: userId },
@@ -77,12 +77,11 @@ class UserService {
   }
 
   // Get all users
-  async getAllUsers(): Promise<User[]> {
+  async function getAllUsers(): Promise<User[]> {
     try {
       const users = await prisma.user.findMany({
         include: {
           apis: true,
-          alerts: true,
           notifications: true,
           settings: true,
         },
@@ -93,6 +92,5 @@ class UserService {
       throw error;
     }
   }
-}
 
-export default UserService;
+export { createUser, getUserById, getUserByEmail, updateUser, deleteUser, getAllUsers };

@@ -1,6 +1,6 @@
 // src/routes/apiCheckRoutes.ts
 import { Router } from 'express';
-import APICheckController from '../controllers/apiCheckContoller';
+import * as APICheckController from '../controllers/apiCheckContoller';
 
 const router = Router();
 

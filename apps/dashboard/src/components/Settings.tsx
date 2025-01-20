@@ -4,12 +4,13 @@ import { useTheme } from '@mui/material/styles'; // Get theme for custom styling
 import axios from "axios";
 
 const SettingsComponent = () => {
-  const theme = useTheme(); // Access MUI theme
+  const theme = useTheme(); 
   const [settings, setSettings] = useState({
-    notifyByEmail: true,
-    notifyBySMS: false,
-    alertThresholdTime: 5000, // Default to 5000ms
+    notifyByEmail: true, 
+    notifyBySMS: false,  
+    alertThresholdTime: 5000, 
   });
+  const [loading, setLoading] = useState(true); 
 
   // Fetch current settings from the backend
   useEffect(() => {
@@ -19,13 +20,14 @@ const SettingsComponent = () => {
         setSettings(response.data);
       } catch (error) {
         console.error("Error fetching settings:", error);
+      } finally {
+        setLoading(false); 
       }
     };
 
     fetchSettings();
   }, []);
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -35,6 +37,10 @@ const SettingsComponent = () => {
       console.error("Error updating settings:", error);
     }
   };
+
+  if (loading) {
+    return <Typography>Loading...</Typography>; 
+  }
 
   return (
     <form
@@ -49,7 +55,7 @@ const SettingsComponent = () => {
       <FormControlLabel
         control={
           <Switch
-            checked={settings.notifyByEmail}
+            checked={settings.notifyByEmail ?? false} // Ensure `false` fallback
             onChange={(e) =>
               setSettings({ ...settings, notifyByEmail: e.target.checked })
             }
@@ -63,7 +69,7 @@ const SettingsComponent = () => {
       <FormControlLabel
         control={
           <Switch
-            checked={settings.notifyBySMS}
+            checked={settings.notifyBySMS ?? false} // Ensure `false` fallback
             onChange={(e) =>
               setSettings({ ...settings, notifyBySMS: e.target.checked })
             }
@@ -77,7 +83,7 @@ const SettingsComponent = () => {
       <TextField
         label="Alert Threshold Time (ms)"
         type="number"
-        value={settings.alertThresholdTime}
+        value={settings.alertThresholdTime ?? 0} // Ensure `0` fallback
         onChange={(e) =>
           setSettings({ ...settings, alertThresholdTime: parseInt(e.target.value, 10) })
         }

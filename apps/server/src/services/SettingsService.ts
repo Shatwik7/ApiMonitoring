@@ -3,9 +3,8 @@ import { SettingsCreateData } from '../models/SettingsCreateData';
 
 const prisma = new PrismaClient();
 
-class SettingsService {
   // Create new settings
-  async createSettings(settingsData: SettingsCreateData): Promise<Settings> {
+  async function createSettings(settingsData: SettingsCreateData): Promise<Settings> {
     try {
       const newSettings = await prisma.settings.create({
         data: settingsData,
@@ -18,7 +17,7 @@ class SettingsService {
   }
 
   // Get settings by userId
-  async getSettingsByUserId(userId: number): Promise<Settings | null> {
+  async function getSettingsByUserId(userId: number): Promise<Settings | null> {
     try {
       const settings = await prisma.settings.findUnique({
         where: { userId },
@@ -31,7 +30,7 @@ class SettingsService {
   }
 
   // Update settings by userId
-  async updateSettings(userId: number, updateData: Partial<SettingsCreateData>): Promise<Settings> {
+  async function updateSettings(userId: number, updateData: Partial<SettingsCreateData>): Promise<Settings> {
     try {
       const updatedSettings = await prisma.settings.update({
         where: { userId },
@@ -45,7 +44,7 @@ class SettingsService {
   }
 
   // Delete settings by userId
-  async deleteSettings(userId: number): Promise<Settings> {
+  async function deleteSettings(userId: number): Promise<Settings> {
     try {
       const deletedSettings = await prisma.settings.delete({
         where: { userId },
@@ -56,6 +55,5 @@ class SettingsService {
       throw error;
     }
   }
-}
 
-export default new SettingsService();
+export { createSettings, getSettingsByUserId, updateSettings, deleteSettings };

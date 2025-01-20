@@ -1,135 +1,157 @@
-import https, { RequestOptions, Agent } from 'https';
+import puppeteer, { Browser } from 'puppeteer';
+import { PrismaClient,Prisma, Region } from '@prisma/client';
 import { Kafka } from 'kafkajs';
-import dns, { LookupOptions } from 'dns';
-import { PrismaClient } from '@prisma/client';
-
+import { mapRegion } from './utils/RegionMaper';
 const prisma = new PrismaClient();
 
+const REGION=process.env.REGION||'europe';
+if(REGION === undefined) {
+  console.error("REGION not defined");
+  process.exit(1);
+}
 const kafka = new Kafka({
-  clientId: 'worker-service',
-  brokers: ['localhost:9093'], // Replace with your Kafka broker address
+  clientId: `worker-service-${REGION}`,
+  brokers: ['localhost:9093'],
 });
-const consumer = kafka.consumer({ groupId: 'api-monitoring-group' });
+const consumer = kafka.consumer({ groupId: `api-monitoring-group-${REGION}` });
 
-interface APICheckResult {
-  apiId: number;
-  apiUrl: string;
-  dnsLookupTime: number;
-  tcpConnectionTime: number;
-  tlsHandshakeTime: number;
-  statusCode: number;
-  totalTime: number;
-}
-
-const agent = new Agent({
-  keepAlive: false,
-  lookup: (
-    hostname: string,
-    options: LookupOptions,
-    callback: (err: NodeJS.ErrnoException | null, address: string | dns.LookupAddress[], family: number) => void
-  ) => {
-    const startTime = process.hrtime();
-    dns.lookup(hostname, options, (err, address, family) => {
-      const endTime = process.hrtime(startTime);
-      const dnsLookupTime = (endTime[0] * 1000 + endTime[1] / 1e6);
-      if (err) {
-        callback(err, '', 0); // Provide default values for address and family in case of error
-      } else {
-        callback(null, address, family);
-      }
-    });
+interface API {
+    id: number;
+    url: string;
+    checkInterval: number;
+    nextCheck: Date | null;
+    live: boolean;
+    userId: number;
   }
-});
 
-interface Api {
-  id: number;
-  url: string;
-  name: string;
-  description: string;
-  checkInterval: number;
-  createdAt: string;
-  updatedAt: string;
-  userId: number;
+  
+  interface APICheckResult {
+    apiId: number;
+    dnsLookupTime: number;
+    tcpConnectionTime: number;
+    tlsHandshakeTime: number;
+    statusCode: number;
+    totalTime: number;
+    live : boolean;
+    region: Region;
+  }
+let c=0;
+async function createBrowserInstance(): Promise<Browser> {
+  return await puppeteer.launch({ args: ['--ignore-certificate-errors'] });
 }
 
-async function monitorRequest(api: Api): Promise<APICheckResult | null> {
-  const { url: apiUrl, id: apiId } = api;
-  console.log(apiUrl, apiId);
-  const startTime = process.hrtime();
-  let dnsLookupTime = 0, tcpConnectionTime: [number, number] | undefined, tlsHandshakeTime: [number, number] | undefined, totalTime: [number, number] | undefined;
+async function capturePerformanceMetrics(browser: Browser, task:API): Promise<APICheckResult | null> {
+    c++;
+    console.log(c);
+  const page = await browser.newPage();
+  let statusCode = 0;
 
-  return new Promise((resolve) => {
-    const request = https.get(apiUrl, { agent } as RequestOptions, (res) => {
-      res.on('data', () => {});
+  try {
+    // Navigate to the URL and get the response
+    
+    const response = await page.goto(task.url, { waitUntil: 'load', timeout: 30000 });
+    await page.setCacheEnabled(false);
+    if (response) {
+      // Capture the status code from the response
+      statusCode = response.status();
 
-      res.on('end', () => {
-        totalTime = process.hrtime(startTime);
-        resolve({
-          apiId,
-          apiUrl,
-          dnsLookupTime,
-          tcpConnectionTime: tcpConnectionTime ? (tcpConnectionTime[0] * 1000 + tcpConnectionTime[1] / 1e6) : 0,
-          tlsHandshakeTime: tlsHandshakeTime ? (tlsHandshakeTime[0] * 1000 + tlsHandshakeTime[1] / 1e6) : 0,
-          statusCode: res.statusCode!,
-          totalTime: totalTime ? (totalTime[0] * 1000 + totalTime[1] / 1e6) : 0,
-        });
-      });
+      // Check if the status code is outside the successful range
+      if (statusCode < 200 || statusCode >= 400) {
+        console.error(`Error: Status code ${statusCode} for URL: ${task.url}`);
+        throw new Error(`HTTP error with status code ${statusCode}`);
+      }
+    } else {
+      console.error(`Error: No response received for the URL: ${task.url}`);
+      throw new Error('Failed to fetch the URL.');
+    }
+
+    // Evaluate performance timings
+    const metrics = await page.evaluate(() => {
+      const [navigationEntry] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+      return {
+        dnsLookupTime: navigationEntry.domainLookupEnd - navigationEntry.startTime,
+        tcpConnectionTime: navigationEntry.secureConnectionStart - navigationEntry.startTime,
+        tlsHandshakeTime: navigationEntry.connectEnd - navigationEntry.startTime,
+        totalTime: navigationEntry.loadEventEnd - navigationEntry.startTime,
+      };
     });
+    await page.close();
 
-    request.on('socket', (socket) => {
-      socket.on('connect', () => {
-        tcpConnectionTime = process.hrtime(startTime);
-      });
+    return {
+        apiId: task.id,
+        dnsLookupTime: metrics.dnsLookupTime,
+        tcpConnectionTime: metrics.tcpConnectionTime,
+        tlsHandshakeTime: metrics.tlsHandshakeTime,
+        statusCode: statusCode,
+        totalTime: metrics.totalTime,
+        live : statusCode >= 200 && statusCode < 400,
+        region: mapRegion(REGION!),
+    };
+  } catch (error: any) {
+    if (error.message.includes('net::ERR_NAME_NOT_RESOLVED')) {
+      console.error(`DNS Lookup Error for URL: ${task.url}`);
+    } else if (error.message.includes('Timeout')) {
+      console.error(`Timeout Error: Navigation to ${task.url} exceeded 30 seconds.`);
+    } else {
+      console.error(`General Error for URL: ${task.url} - ${error.message}`);
+    }
 
-      socket.on('secureConnect', () => {
-        tlsHandshakeTime = process.hrtime(startTime);
-      });
-    });
-
-    request.on('error', (error: Error) => {
-      console.error(`Request failed: ${error.message}`);
-      resolve(null);
-    });
-  });
+    await page.close();
+    return null;
+  }
 }
 
 async function run() {
-  await consumer.connect();
-  await consumer.subscribe({ topic: 'api-monitoring-tasks', fromBeginning: false });
+    await consumer.connect();
+    await consumer.subscribe({ topic: 'api-monitoring-tasks', fromBeginning: false });
+  
+    let results: APICheckResult[] = [];
+    const browser = await createBrowserInstance();
+    await consumer.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        console.log("topic", topic);
+        if (message.value) {
+          try {
+            console.log('Received message', message.value.toString());
+            const tasks = JSON.parse(message.value.toString()) as API[];
+            
+            const monitorPromises = tasks.map((task) =>  capturePerformanceMetrics(browser,task));
+            const concurrentResults = await Promise.all(monitorPromises);
 
-  let results: APICheckResult[] = [];
-
-  await consumer.run({
-    eachMessage: async ({ topic, partition, message }) => {
-      console.log("topic", topic);
-      if (message.value) {
-        try {
-          const tasks = JSON.parse(message.value.toString()) as Api[];
-          
-          // Launch multiple monitorRequest calls concurrently
-          const monitorPromises = tasks.map((task) => monitorRequest(task));
-          const concurrentResults = await Promise.all(monitorPromises);
-
-          // Filter out null results
-          const validResults = concurrentResults.filter((result) => result !== null) as APICheckResult[];
-          results.push(...validResults);
-
-          // Bulk insert every 1000 tasks or so
-          if (results.length >= 100) {
-            await prisma.aPICheck.createMany({ data: results }).catch((e) => console.error(e));
-            console.log('Bulk insert completed.');
-            console.log("\x1B[31m", results, "\x1B[37m");
-            results = [];
+            // Filter out null results
+            const validResults = concurrentResults.filter((result) => result !== null) as APICheckResult[];
+            console.log('Valid results:', validResults);
+            results.push(...validResults);
+            await prisma.$transaction(
+                async (prisma) => {
+                    for (const result of validResults) {
+                        await prisma.aPICheck.create({
+                        data: {
+                            apiId: result.apiId,
+                            dnsLookupTime: result.dnsLookupTime,
+                            tcpConnectionTime: result.tcpConnectionTime,
+                            tlsHandshakeTime: result.tlsHandshakeTime,
+                            statusCode: result.statusCode,
+                            totalTime: result.totalTime,
+                            live: result.live,
+                            region: result.region,
+                        },
+                        });
+                    }
+                }
+            );
+          } catch (error) {
+            console.error('Failed to parse message or process tasks:', error);
           }
-        } catch (error) {
-          console.error('Failed to parse message or process tasks:', error);
+        } else {
+          console.warn('Received a message with null or undefined value');
         }
-      } else {
-        console.warn('Received a message with null or undefined value');
-      }
-    },
-  });
-}
+      },
+    });
+  }
+  
 
-// Start the worker service
-run().catch((e) => console.error(e));
+  run().catch((error) => {
+    console.error(error);
+    process.exit(1);
+});

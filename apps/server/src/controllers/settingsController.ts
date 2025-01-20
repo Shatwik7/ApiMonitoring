@@ -1,11 +1,16 @@
 import { Request, Response } from 'express';
-import SettingsService from '../services/SettingsService';
+import * as SettingsService from '../services/SettingsService';
 
-class SettingsController {
+
   // Fetch user settings
-  async fetchUserSettings(req: Request, res: Response) {
+  /**
+   * 
+   * @param req express request
+   * @param res express response
+   */
+  async function fetchUserSettings(req: Request, res: Response) {
     try {
-      const userId = req.userId;
+      const userId = req.userId; 
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
       }
@@ -23,7 +28,12 @@ class SettingsController {
   }
 
   // Update user settings
-  async updateUserSettings(req: Request, res: Response) {
+  /**
+   * 
+   * @param req express request
+   * @param res express response
+   */
+  async function updateUserSettings(req: Request, res: Response) {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -39,7 +49,7 @@ class SettingsController {
   }
 
   // Create user settings
-  async createUserSettings(req: Request, res: Response) {
+  async function createUserSettings(req: Request, res: Response) {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -55,7 +65,7 @@ class SettingsController {
   }
 
   // Delete user settings
-  async deleteUserSettings(req: Request, res: Response) {
+  async function deleteUserSettings(req: Request, res: Response) {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -69,6 +79,6 @@ class SettingsController {
       return res.status(500).json({ message: 'Internal server error' });
     }
   }
-}
 
-export default new SettingsController();
+
+export { fetchUserSettings, updateUserSettings, createUserSettings, deleteUserSettings };

@@ -3,6 +3,8 @@ import ApiIcon from '@mui/icons-material/Api';
 import ApiChart from './ApiChart';
 import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
+import {useNavigate,useParams} from 'react-router-dom';
+import AvalabilityTable from './AvalabilityTable';
 interface Api {
     id: number;
     name: string;
@@ -14,7 +16,9 @@ const APIS: Api[] = [
     // Add more APIs here
 ];
 
-function ApiList({ onApiClick }: { onApiClick: (id: number) => void }) {
+export function ApiList() {
+    const navigator=useNavigate();
+
     return (
         <Paper sx={{ width: '100%', p: 2, boxShadow: 3 }}>
             <List sx={{ p: 0 }}>
@@ -27,7 +31,7 @@ function ApiList({ onApiClick }: { onApiClick: (id: number) => void }) {
                             transition: 'background-color 0.3s ease',
                         }}
                     >
-                        <ListItemButton onClick={() => onApiClick(api.id)}
+                        <ListItemButton onClick={() => navigator(`api/${api.id}`)}
                             sx={{ p: 0.5 }}>
                             <ListItemIcon>
                                 <ApiIcon />
@@ -43,20 +47,36 @@ function ApiList({ onApiClick }: { onApiClick: (id: number) => void }) {
         </Paper>
     );
 }
-function ApiDetail({ apiId, onBack }: { apiId: number; onBack: () => void }) {
-    const api = APIS.find((api) => api.id === apiId);
-
+export function ApiDetail() {
+    const navigator=useNavigate();
+    const { api_id } = useParams();
+    const api = APIS.find((api) => api.id === Number(api_id));
+    
     if (!api) {
         return <Typography>API not found</Typography>;
     }
 
     return (
-        <Paper sx={{ width: '100%', p: 2, position: 'relative' }}>
+        <>
+        <Paper  sx={{
+      width: {
+        xs: '100%',
+        sm: '100%', 
+        md: '70%', 
+      },
+      p: {
+        xs: 2,
+        sm: 3, 
+      },
+      position: 'relative',
+      boxShadow: 3,
+      borderRadius: 2,
+    }}>
             <Box sx={{ position: 'absolute', top: 16, left: 16, mb: 3 }}>
-                <ArrowBack onClick={onBack} sx={{
+                <ArrowBack onClick={()=>navigator('/dash')} sx={{
                     fontSize: 24,
                     color: 'gray',
-                    cursor: 'pointer',
+                    cursor: 'pointer', 
                     transition: 'color 0.3s ease',
                     '&:hover': {
                         transition: "0.4s",
@@ -67,19 +87,16 @@ function ApiDetail({ apiId, onBack }: { apiId: number; onBack: () => void }) {
                     },
                 }} />
             </Box>
-            <Box sx={{ mt: 10 }}>
+            <Box>
                 <ApiChart apiId={api.id} />
             </Box>
+            <Box>
+                <Typography variant="h5" sx={{ mt: 3, mb: 2 }}>
+                    Availability
+                </Typography>
+            <AvalabilityTable></AvalabilityTable>
+            </Box>
         </Paper>
+        </>
     );
-}
-export const DashboardSection = ({ selectedApiId, handleApiClick, handleBack }: any) => {
-    return (
-        <>
-            {selectedApiId ? (
-                <ApiDetail apiId={selectedApiId} onBack={handleBack} />
-            ) : (
-                <ApiList onApiClick={handleApiClick} />
-            )}
-        </>);
 }

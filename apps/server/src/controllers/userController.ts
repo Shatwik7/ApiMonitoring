@@ -2,7 +2,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
-import UserService from '../services/UserService';
+import * as userService from '../services/UserService';
 
 declare module 'express' {
     export interface Request {
@@ -11,11 +11,10 @@ declare module 'express' {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
-const userService = new UserService();
 
-class UserController {
+
     // User sign-up (register)
-    async register(req: Request, res: Response) {
+    async function register(req: Request, res: Response) {
         const { email, password, name } = req.body;
         console.log({ email, password, name });
 
@@ -54,19 +53,20 @@ class UserController {
     }
 
     // User login
-    async login(req: Request, res: Response) {
+    async function  login(req: Request, res: Response) {
         const { email, password } = req.body;
 
         try {
             // Find user by email using UserService
             const user = await userService.getUserByEmail(email);
-
+            console.log(user);
             if (!user) {
                 return res.status(400).json({ message: 'Invalid credentials' });
             }
 
             // Check if the password is valid
             const isPasswordValid = await bcrypt.compare(password, user.password);
+            console.log(isPasswordValid);
             if (!isPasswordValid) {
                 return res.status(400).json({ message: 'Invalid credentials' });
             }
@@ -75,16 +75,24 @@ class UserController {
             const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
                 expiresIn: '1d',
             });
-
-            return res.json({ token, user });
+            console.log(token);
+            console.log({send:{
+                user:user
+            }});
+            const parsedUser={
+                            name:user.name,
+                            email:user.email,
+                            updatedAt:user.updatedAt,
+                            createdAt:user.createdAt
+                            }
+            return res.json({ token,parsedUser});
         } catch (error) {
             console.error('Error logging in:', error);
             return res.status(500).json({ message: 'Internal server error' });
         }
     }
 
-    // Fetch logged-in user's details
-    async fetchUserDetails(req: Request, res: Response) {
+    async function fetchUserDetails(req: Request, res: Response) {
         try {
             const userId = req.userId;
 
@@ -107,9 +115,8 @@ class UserController {
     }
 
     // Logout (for token invalidation, handled at client-side by clearing tokens)
-    async logout(req: Request, res: Response) {
+    async function logout(req: Request, res: Response) {
         return res.status(200).json({ message: 'Logged out successfully' });
     }
-}
 
-export default new UserController();
+    export { register, login, fetchUserDetails, logout };

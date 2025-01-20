@@ -45,15 +45,15 @@ export const Vortex = (props: VortexProps) => {
   let tick = 0;
   const noise3D = createNoise3D();
   let particleProps = new Float32Array(particlePropsLength);
-  let center: [number, number] = [0, 0];
+  // let center: [number, number] = [0, 0];
 
-  const HALF_PI: number = 0.5 * Math.PI;
+  // const HALF_PI: number = 0.5 * Math.PI;
   const TAU: number = 2 * Math.PI;
-  const TO_RAD: number = Math.PI / 180;
+  // const TO_RAD: number = Math.PI / 180;
   const rand = (n: number): number => n * Math.random();
   const randRange = (n: number): number => n - rand(2 * n);
   const fadeInOut = (t: number, m: number): number => {
-    let hm = 0.5 * m;
+    const hm = 0.5 * m;
     return Math.abs(((t + hm) % m) - hm) / hm;
   };
   const lerp = (n1: number, n2: number, speed: number): number =>
@@ -66,7 +66,7 @@ export const Vortex = (props: VortexProps) => {
       const ctx = canvas.getContext("2d");
 
       if (ctx) {
-        resize(canvas, ctx);
+        resize(canvas);
         initParticles();
         draw(canvas, ctx);
       }
@@ -90,7 +90,7 @@ export const Vortex = (props: VortexProps) => {
     let x, y, vx, vy, life, ttl, speed, radius, hue;
 
     x = rand(canvas.width);
-    y = center[1] + randRange(rangeY);
+    y =  randRange(rangeY);
     vx = 0;
     vy = 0;
     life = 0;
@@ -192,15 +192,15 @@ export const Vortex = (props: VortexProps) => {
 
   const resize = (
     canvas: HTMLCanvasElement,
-    ctx?: CanvasRenderingContext2D
+    // ctx?: CanvasRenderingContext2D
   ) => {
     const { innerWidth, innerHeight } = window;
 
     canvas.width = innerWidth;
     canvas.height = innerHeight;
 
-    center[0] = 0.5 * canvas.width;
-    center[1] = 0.5 * canvas.height;
+    // center[0] = 0.5 * canvas.width;
+    // center[1] = 0.5 * canvas.height;
   };
 
   const renderGlow = (
@@ -236,7 +236,7 @@ export const Vortex = (props: VortexProps) => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
       if (canvas && ctx) {
-        resize(canvas, ctx);
+        resize(canvas);
       }
     });
   }, []);

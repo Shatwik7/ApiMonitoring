@@ -1,5 +1,5 @@
 import express from 'express';
-import SettingsController from '../controllers/settingsController';
+import * as SettingsController from '../controllers/settingsController';
 import { authenticateJWT } from '../middleware/authenticateJWT';
 
 const router = express.Router();

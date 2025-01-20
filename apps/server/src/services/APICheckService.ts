@@ -3,9 +3,9 @@ import { APICheckCreateData } from '../models/APICheckCreateData';
 
 const prisma = new PrismaClient();
 
-class APICheckService {
+
     // Create a new API check
-    async createAPICheck(apiCheckData: APICheckCreateData): Promise<APICheck> {
+    async function createAPICheck(apiCheckData: APICheckCreateData): Promise<APICheck> {
       try {
         const newAPICheck = await prisma.aPICheck.create({
           data: apiCheckData,
@@ -18,7 +18,7 @@ class APICheckService {
     }
   
     // Get API checks for a specific API in the last 24 hours
-    async getAPIChecksLast24Hours(apiId: number): Promise<APICheck[]> {
+    async function getAPIChecksLast24Hours(apiId: number): Promise<APICheck[]> {
       try {
         const date = new Date();
         date.setHours(date.getHours() - 24);
@@ -38,7 +38,7 @@ class APICheckService {
     }
   
     // Get API checks for a specific API in the last 7 days
-    async getAPIChecksLast7Days(apiId: number): Promise<APICheck[]> {
+    async function getAPIChecksLast7Days(apiId: number): Promise<APICheck[]> {
       try {
         const date = new Date();
         date.setDate(date.getDate() - 7);
@@ -58,7 +58,7 @@ class APICheckService {
     }
   
     // Get API checks for a specific API in the last 28 days
-    async getAPIChecksLast28Days(apiId: number): Promise<APICheck[]> {
+    async function getAPIChecksLast28Days(apiId: number): Promise<APICheck[]> {
       try {
         const date = new Date();
         date.setDate(date.getDate() - 28);
@@ -78,7 +78,7 @@ class APICheckService {
     }
   
     // Get API checks for a specific API in the last 3 months
-    async getAPIChecksLast3Months(apiId: number): Promise<APICheck[]> {
+    async function getAPIChecksLast3Months(apiId: number): Promise<APICheck[]> {
       try {
         const date = new Date();
         date.setMonth(date.getMonth() - 3);
@@ -98,7 +98,7 @@ class APICheckService {
     }
   
     // Get API checks for a specific API in the last 6 months
-    async getAPIChecksLast6Months(apiId: number): Promise<APICheck[]> {
+    async function getAPIChecksLast6Months(apiId: number): Promise<APICheck[]> {
       try {
         const date = new Date();
         date.setMonth(date.getMonth() - 6);
@@ -118,7 +118,7 @@ class APICheckService {
     }
   
     // Get all API checks for a specific API (forever)
-    async getAllAPIChecksForAPI(apiId: number): Promise<APICheck[]> {
+    async function getAllAPIChecksForAPI(apiId: number): Promise<APICheck[]> {
       try {
         const apiChecks = await prisma.aPICheck.findMany({
           where: {
@@ -131,9 +131,8 @@ class APICheckService {
         throw error;
       }
     }
-  }
   
-export default APICheckService;
+export { createAPICheck, getAPIChecksLast24Hours, getAPIChecksLast7Days, getAPIChecksLast28Days, getAPIChecksLast3Months, getAPIChecksLast6Months, getAllAPIChecksForAPI };
 // const APICheck=new APICheckService();
 
 // async function main() {
