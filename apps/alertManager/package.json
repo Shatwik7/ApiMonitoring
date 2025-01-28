@@ -1,0 +1,27 @@
+{
+  "name": "incidentservice",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "generate:proto": "npx proto-loader-gen-types --longs=String --enums=String --defaults --oneofs --grpcLib=@grpc/grpc-js --outDir=./src/types ./proto/alert.proto",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run generate:proto && tsc -b",
+    "dev": "concurrently \"npm run generate:proto --watch\" \"npx tsc -w\" \"nodemon dist/index.js\"",
+    "start": "node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.12.5",
+    "@grpc/proto-loader": "^0.7.13",
+    "dotenv": "^16.4.7",
+    "nodemailer": "^6.10.0",
+    "twilio": "^5.4.2"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^6.4.17",
+    "@types/twilio": "^3.19.3"
+  }
+}

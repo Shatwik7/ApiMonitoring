@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package alertManager;
+
+import "google/protobuf/timestamp.proto";
+
+// Enums
+enum ApiError {
+  TIMEOUT = 1;
+  DNS = 2;
+  STATUS = 3;
+}
+
+// Messages
+message CreateIncidentRequest {
+  int32 apiId = 1;
+  string description = 2;
+  ApiError type = 3;
+  int32 statusCode = 4;
+  string screenshot = 5;
+}
+
+message CreateIncidentResponse {
+  int32 incidentId = 1;
+  string message = 2;
+}
+
+message AcknowledgeIncidentRequest {
+  int32 incidentId = 1;
+}
+
+message AcknowledgeIncidentResponse {
+  string message = 1;
+}
+
+message ResolveIncidentRequest {
+  int32 incidentId = 1;
+  google.protobuf.Timestamp resolvedAt = 2;
+  bool resolved = 3;
+  bool acknowledged = 4;
+}
+
+message ResolveIncidentResponse {
+  string message = 1;
+}
+
+message TestAlertRequest {
+  int32 userId = 1;
+}
+
+message TestAlertResponse {
+  string message = 1;
+}
+
+message SendEmailRequest {
+  int32 userId = 1;
+  string message = 2;
+}
+
+message SendEmailResponse {
+  string message = 1;
+}
+
+message SendSmsRequest {
+  int32 userId = 1;
+  string message = 2;
+}
+
+message SendSmsResponse {
+  string message = 1;
+}
+
+// Services
+service IncidentService {
+  rpc CreateIncident(CreateIncidentRequest) returns (CreateIncidentResponse);
+  rpc AcknowledgeIncident(AcknowledgeIncidentRequest) returns (AcknowledgeIncidentResponse);
+  rpc ResolveIncident(ResolveIncidentRequest) returns (ResolveIncidentResponse);
+}
+
+service NotificationService {
+  rpc TestAlert(TestAlertRequest) returns (TestAlertResponse);
+  rpc SendEmail(SendEmailRequest) returns (SendEmailResponse);
+  rpc SendSms(SendSmsRequest) returns (SendSmsResponse);
+}

@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+enum ApiError {
+  DNS
+  STATUS
+  TIMEOUT
+}
+enum HttpMethod {
+  GET
+  POST
+  DELETE
+  PUT
+  UPDATE
+  PATCH
+}
+
+enum Region {
+  europe
+  americas
+  asia
+  oceania
+}
+
+enum NotificationType {
+  EMAIL
+  SMS
+  PUSH
+}
+
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  phone     Float      @default(0)
+  
+  // Relations
+  apis          API[] 
+  notifications Notification[] 
+  settings      Settings? 
+
+  @@index([email])
+}
+
+model API {
+  id             Int      @id @default(autoincrement())
+  url           String   
+  name          String?
+  statusCode    Int?
+  request_timeout Int?     // in seconds
+  domainExpiration Boolean?  // hard coded one day before domainExpiration
+  sslExpiration    Boolean?   // hard coded one day before sslExpiration
+  checkInterval Int // In seconds (e.g., 3)
+  lastCheck     DateTime @default(now())
+  nextCheck     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  method        HttpMethod   @default(GET) // Enum for HTTP methods
+  live         Boolean @default(true)
+  lastLive      DateTime @default(now())
+  notifyByEmail      Boolean @default(true)
+  notifyBySMS        Boolean @default(false)
+  notifyByCall       Boolean @default(false)
+
+  // Relations
+  userId    Int
+  user      User       @relation(fields: [userId], references: [id])
+  apiChecks APICheck[] // Each API has multiple checks
+  incidents Incident[] // Each API can have multiple incidents
+
+  @@index([nextCheck]) // Add index here
+  @@index([id]) // Add index here
+  @@index([userId]) // Add index here
+}
+
+model APICheck {
+  id                Int      @id @default(autoincrement())
+  apiId             Int
+  dnsLookupTime     Float
+  tcpConnectionTime Float
+  tlsHandshakeTime  Float
+  statusCode        Int
+  totalTime         Float
+  region            Region
+  live              Boolean @default(false)  
+  checkedAt         DateTime @default(now())
+
+  // Relations
+  api API @relation(fields: [apiId], references: [id])
+  @@index([apiId]) // Add index here
+}
+
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  message   String
+  userId    Int
+  seen      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  type      NotificationType
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Settings {
+  id                 Int     @id @default(autoincrement())
+  userId             Int     @unique
+  notifyByEmail      Boolean @default(true)
+  notifyBySMS        Boolean @default(false)
+  notifyByCall       Boolean @default(false)
+  alertThresholdTime Int // Time in ms above which an alert is triggered
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Incident {
+  id          Int       @id @default(autoincrement())
+  apiId       Int
+  description String
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+  acknowledged Boolean @default(false)
+  resolved     Boolean @default(false)
+  screenshot   String?
+  statusCode   Int?
+  type        ApiError
+
+  // Relations
+  api API @relation(fields: [apiId], references: [id])
+  @@index([apiId]) // Add index here
+}

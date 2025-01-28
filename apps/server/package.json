@@ -1,0 +1,25 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "generate:proto": "npx proto-loader-gen-types --longs=String --enums=String --defaults --oneofs --grpcLib=@grpc/grpc-js --outDir=./src/types ./proto/alert.proto",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": " npm run genreate:proto && tsc -b",
+    "dev": "concurrently \"npx tsc -w\" \"node dist/index.js\"",
+    "start": "node dist/index.js"
+  },
+  "author": "shatwik",
+  "license": "ISC",
+  "dependencies": {
+    "@repo/db": "*",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.7",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

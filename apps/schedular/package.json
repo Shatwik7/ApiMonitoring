@@ -1,0 +1,23 @@
+{
+  "name": "schedular",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx tsc -b",
+    "start": "node dist/index.js",
+    "dev": "concurrently \"npx tsc -w\" \"node dist/index.js\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@repo/db":"*",
+    "@types/node": "^22.5.4",
+    "@types/node-cron": "^3.0.11",
+    "concurrently": "^8.2.2",
+    "kafkajs": "^2.2.4",
+    "node-cron": "^3.0.3"
+  }
+}

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #007bff;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .content {
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .info {
+            margin-bottom: 20px;
+        }
+
+        .info p {
+            margin: 8px 0;
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 20px;
+            margin: 5px;
+            font-size: 16px;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .btn-acknowledge {
+            background-color: #28a745;
+        }
+
+        .btn-unavailable {
+            background-color: #dc3545;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: #999;
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            Incident Alert
+        </div>
+        <div class="content">
+            <div class="info">
+                <p><strong>API URL:</strong> {{api_url}}</p>
+                <p><strong>Started At:</strong> {{started_at}}</p>
+                <p><strong>error : </strong> {{errortype}}</strong></p>
+            </div>
+            <div class="button-container">
+                <a href="{{acknowledge_url}}" class="button btn-acknowledge">Acknowledge</a>
+                <a href="{{unavailable_url}}" class="button btn-unavailable">I'm Unavailable</a>
+            </div>
+        </div>
+        <div class="footer">
+            This is an automated message. Please do not reply directly.
+        </div>
+    </div>
+</body>
+</html>
