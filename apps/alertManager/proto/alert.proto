@@ -34,7 +34,7 @@ message AcknowledgeIncidentResponse {
 }
 
 message ResolveIncidentRequest {
-  int32 incidentId = 1;
+  int32 apiId = 1;
   google.protobuf.Timestamp resolvedAt = 2;
   bool resolved = 3;
   bool acknowledged = 4;

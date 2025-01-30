@@ -50,6 +50,7 @@ async function getApi() : Promise<API[]> {
         nextCheck: true,
         live :true,
         userId: true,
+        method:true,
         statusCode: true,
         request_timeout: true,
         domainExpiration :true,  

@@ -3,6 +3,10 @@ import * as grpc from "@grpc/grpc-js";
 import { Page } from 'puppeteer';
 import { ApiError } from '@prisma/client';
 import { takeScreenshot } from './imageStore';
+import {
+  LockOnIncident
+} from '@repo/cache';
+import { API } from './GetMetric';
 
 /**
  * Generate description and error type for an incident.
@@ -38,7 +42,7 @@ function determineIncidentDetails(error: any, url: string): { description: strin
  * @param error - The error that occurred during monitoring.
  * @returns The created incident.
  */
-export async function createIncidentForAPI(
+export async function createIncidentHandler(
   apiId: number,
   page: Page | null,
   error: any,
@@ -46,7 +50,7 @@ export async function createIncidentForAPI(
   statusCode:number
 ): Promise<void> {
   const { description, type } = determineIncidentDetails(error, url);
-
+  if(!(await LockOnIncident(apiId))) return;
   let screenshot;
   if (page) {
     screenshot = await takeScreenshot(page, apiId);
@@ -68,3 +72,29 @@ export async function createIncidentForAPI(
   console.log(`Incident created for API ID ${apiId}: ${description}`);
 }
 
+
+
+/**
+ * Create an incident for an API when an error occurs.
+ * @param error The error that occurred during monitoring.
+ * @param api api data
+ * @param statusCode statusCode which was collected during sending the request
+ * @returns 
+ */
+export async function defaultIncidentHandler(error:any,api:API,statusCode:number):Promise<void>{
+  const { description, type } = determineIncidentDetails(error, api.url);
+  if(!(await LockOnIncident(api.id))) return;
+  incidentService.CreateIncident({
+    apiId: api.id,
+    description: description,
+    type: type,
+    statusCode: statusCode,
+    screenshot: undefined,
+  }, (err: grpc.ServiceError | null, response: any) => {
+    if (err) {
+      console.error('Error creating incident:', err.message);
+      return;
+    }
+    console.log('Incident created successfully:', response);
+  });
+}

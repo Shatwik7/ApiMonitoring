@@ -19,6 +19,7 @@
     "@grpc/grpc-js": "^1.12.5",
     "@grpc/proto-loader": "^0.7.13",
     "@prisma/client": "^5.19.1",
+    "@repo/cache": "*",
     "@types/node-cron": "^3.0.11",
     "axios": "^1.7.7",
     "concurrently": "^8.2.2",
