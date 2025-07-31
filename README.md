@@ -1,6 +1,7 @@
 # API Monitoring Application
 
 ## Overview
+<img width="1276" height="634" alt="diagram-export-7-31-2025-6_50_47-AM" src="https://github.com/user-attachments/assets/198a2dc6-d04f-42c0-90ce-8c68e622a26c" />
 
 This application is designed to monitor APIs by scheduling periodic checks across four geographical regions. It captures critical metrics such as:
 
